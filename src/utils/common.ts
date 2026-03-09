@@ -1,0 +1,1 @@
+export const STORAGE_URL = 'https://awxsyuwhwafcaxcmqzgk.supabase.co/storage/v1/object/public'

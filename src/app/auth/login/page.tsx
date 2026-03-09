@@ -6,6 +6,8 @@ import { supabase } from '@/lib/supabase-client'
 import { motion } from 'framer-motion'
 import { Eye, EyeOff, Loader2, MessageSquare } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
+import { STORAGE_URL } from '@/utils/common'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -62,21 +64,21 @@ export default function LoginPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="w-full max-w-md bg-card/50 backdrop-blur-xl border border-border p-8 rounded-3xl shadow-2xl z-10"
+        className="w-full max-w-md bg-zinc-950/80 text-zinc-100 backdrop-blur-2xl border border-white/10 p-8 rounded-3xl shadow-2xl z-10"
       >
         <div className="flex flex-col items-center mb-8">
-          <div className="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center mb-4">
-            <MessageSquare className="w-6 h-6 text-blue-500" />
+          <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-6 logo-container overflow-hidden relative shadow-inner ring-1 ring-white/20">
+            <Image src={`${STORAGE_URL}/logo/vambu-logo.png`} alt="Vambu Logo" fill sizes="64px" className="object-contain drop-shadow-md" />
           </div>
-          <h1 className="text-3xl font-bold tracking-tight mb-2">Welcome Back</h1>
-          <p className="text-muted-foreground text-sm text-center">
+          <h1 className="text-3xl font-bold tracking-tight mb-2 text-white">Welcome Back</h1>
+          <p className="text-zinc-400 text-sm text-center">
             Sign in to continue to your Vambu chats
           </p>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-4">
+        <form onSubmit={handleLogin} className="space-y-5">
           <div className="space-y-2">
-            <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+            <label className="text-sm font-medium leading-none text-zinc-300">
               Email
             </label>
             <input
@@ -85,13 +87,13 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="flex h-11 w-full rounded-xl border border-border bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-12 w-full rounded-xl border border-white/10 bg-black/50 px-4 py-2 text-sm text-white shadow-inner transition-colors placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:border-transparent"
             />
           </div>
 
           <div className="space-y-2 relative">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              <label className="text-sm font-medium leading-none text-zinc-300">
                 Password
               </label>
             </div>
@@ -102,12 +104,12 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="flex h-11 w-full rounded-xl border border-border bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50 pr-10"
+                className="flex h-12 w-full rounded-xl border border-white/10 bg-black/50 px-4 py-2 text-sm text-white shadow-inner transition-colors placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:border-transparent pr-10"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white transition-colors"
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -118,7 +120,7 @@ export default function LoginPage() {
             <motion.div 
               initial={{ opacity: 0, height: 0 }} 
               animate={{ opacity: 1, height: 'auto' }} 
-              className="text-sm text-red-500 font-medium"
+              className="text-sm text-red-400 font-medium bg-red-400/10 p-3 rounded-lg border border-red-400/20"
             >
               {error}
             </motion.div>
@@ -127,7 +129,7 @@ export default function LoginPage() {
           <button 
             type="submit" 
             disabled={loading}
-            className="w-full inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-foreground text-background shadow hover:opacity-90 h-11 px-4 py-2 mt-4"
+            className="w-full inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:pointer-events-none disabled:opacity-50 bg-indigo-600 text-white shadow-lg hover:bg-indigo-500 hover:shadow-indigo-500/25 h-12 px-4 py-2 mt-2"
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
             {loading ? "Signing in..." : "Sign In"}
@@ -136,19 +138,19 @@ export default function LoginPage() {
 
         <div className="relative my-8">
           <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-border" />
+            <span className="w-full border-t border-white/10" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+            <span className="bg-zinc-950 px-3 text-zinc-500 font-medium tracking-wider">Or continue with</span>
           </div>
         </div>
 
         <button 
           onClick={handleGoogleLogin}
           type="button"
-          className="w-full inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring border border-border bg-transparent shadow-sm hover:bg-muted h-11 px-4 py-2"
+          className="w-full inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500 border border-white/10 bg-white/5 shadow-sm hover:bg-white/10 h-12 px-4 py-2 text-white"
         >
-          <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
             <path
               d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
               fill="#4285F4"
@@ -166,12 +168,12 @@ export default function LoginPage() {
               fill="#EA4335"
             />
           </svg>
-          Google
+          Continue with Google
         </button>
 
-        <div className="mt-6 text-center text-sm text-muted-foreground">
+        <div className="mt-8 text-center text-sm text-zinc-400">
           Don&apos;t have an account?{" "}
-          <Link href="/auth/register" className="text-blue-500 hover:underline font-medium">
+          <Link href="/auth/register" className="text-indigo-400 hover:text-indigo-300 hover:underline font-medium transition-colors">
             Sign up
           </Link>
         </div>
