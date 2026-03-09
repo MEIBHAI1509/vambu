@@ -1,36 +1,110 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Vambu Chat Website – System Architecture & Overview
 
-## Getting Started
+## 1. High-Level System Overview
+Vambu Chat is a real-time chat web application.
 
-First, run the development server:
+- **Frontend**: Next.js (React framework)
+- **Backend Platform**: Supabase (Backend-as-a-Service)
+- **Database**: PostgreSQL (managed by Supabase)
+- **Authentication**: Supabase Auth
+- **Email Service**: Resend
+- **Hosting**: Netlify / Vercel (typical deployment)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+**Architecture Flow:**
+`Client (Next.js) → Supabase APIs → PostgreSQL Database`
+
+## 2. Technology Stack
+**Frontend**
+- Next.js (App Router)
+- React Hooks
+- TypeScript / JavaScript
+
+**Backend (Managed by Supabase)**
+- Authentication
+- Database
+- Realtime
+- Storage
+- REST APIs
+
+## 3. Database Structure
+Supabase manages the main auth table automatically.
+
+**`auth.users` (managed by Supabase)**
+- id
+- email
+- password hash
+- metadata
+- email confirmation status
+
+**`public.users` (custom table)**
+- id (linked to `auth.users`)
+- email
+- username
+- created_at
+
+## 4. Authentication Flow
+**Email Login Flow:**
+User → Login Form → `supabase.auth.signInWithPassword()` → Supabase verifies credentials → Session token returned → Cookie stored → Redirect to `/chat`
+
+**Google OAuth Flow:**
+User → Google Login → `supabase.auth.signInWithOAuth()` → Google Auth → Supabase Callback → Session created → Redirect to `/chat`
+
+## 5. Session Management
+Supabase stores sessions using cookies.
+
+**Example cookies:**
+- `sb-xxxx-auth-token`
+- `sb-xxxx-auth-token.0`
+- `sb-xxxx-auth-token.1`
+
+**Session verification methods:**
+- **Client**: `supabase.auth.getSession()`
+- **Server**: `supabase.auth.getUser()`
+
+## 6. Middleware Security
+Middleware protects routes such as `/chat`.
+
+**Flow:**
+User visits `/chat` → `middleware.ts` runs → Supabase checks session → If user exists → allow access → If not → redirect to `/auth/login`
+
+## 7. Project Folder Structure
+```text
+src
+ ├── app
+ │   ├── auth
+ │   │   ├── login/page.tsx
+ │   │   ├── register/page.tsx
+ │   │   └── callback/page.tsx
+ │   ├── chat/page.tsx
+ │   └── page.tsx
+ │
+ ├── lib
+ │   ├── supabase-client.ts
+ │   └── supabase-server.ts
+ │
+ ├── middleware.ts
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 8. Real-Time Chat (Future Implementation)
+Supabase supports realtime messaging using PostgreSQL WAL and WebSockets.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+**Chat flow:**
+User sends message → Insert into `messages` table → Supabase realtime event → Other users receive message instantly
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 9. Recommended Chat Database Schema
+- `users`
+- `chats`
+- `chat_members`
+- `messages`
 
-## Learn More
+**`messages` table example:**
+- `id`
+- `chat_id`
+- `sender_id`
+- `message`
+- `created_at`
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 10. Deployment Architecture
+- Next.js application deployed to Netlify/Vercel
+- Frontend communicates directly with Supabase APIs
+- Supabase manages authentication, database, and realtime services
