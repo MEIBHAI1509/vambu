@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase-client'
 import { motion, AnimatePresence } from 'framer-motion'
 import { LogOut, Search, Settings, MessageSquare, Send, User, MoreVertical, Loader2, Home, Users, Star, Calendar, FileText, Bell, Edit } from 'lucide-react'
+import { STORAGE_URL } from '@/utils/common'
+import Image from 'next/image'
 
 // Mock data to show a beautiful UI
 const mockContacts = [
@@ -71,10 +73,11 @@ export default function ChatPage() {
       >
         {/* Logo Area */}
         <div className="p-6 md:p-8 flex items-center gap-3">
-          <div className="w-10 h-10 bg-white text-[#141235] rounded-2xl flex items-center justify-center shrink-0">
-            <MessageSquare className="w-6 h-6" />
-          </div>
-          <span className="font-bold text-xl text-white hidden md:block tracking-wide">AI Chat</span>
+        <div className="flex items-center gap-2 font-bold text-xl tracking-tight">
+          {/* <MessageSquare className="w-6 h-6 text-blue-500" /> */}
+          <Image src={`${STORAGE_URL}/logo/vambu-logo.png`} alt="Vambu Logo" width={40} height={40} className="object-contain drop-shadow-md rounded-full" />
+          <span>Vambu</span>
+        </div>
         </div>
 
         {/* Navigation Menu */}
@@ -85,7 +88,9 @@ export default function ChatPage() {
             { id: 'groups', icon: Users, label: 'Groups' },
             { id: 'favourites', icon: Star, label: 'Favourites' },
             { id: 'calendar', icon: Calendar, label: 'Calendar' },
+            { id: 'ai-chat', icon: MessageSquare, label: 'AI Chat' },
             { id: 'files', icon: FileText, label: 'Files' },
+            { id: 'settings', icon: Settings, label: 'Settings' },
           ].map((item, idx) => (
             <motion.button
               key={item.id}

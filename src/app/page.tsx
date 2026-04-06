@@ -2,6 +2,8 @@ import { redirect } from 'next/navigation'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import Link from 'next/link'
 import { MessageSquare, Zap, Shield, Sparkles } from 'lucide-react'
+import { STORAGE_URL } from '@/utils/common'
+import Image from 'next/image'
 
 export default async function HomePage() {
   const supabase = await createSupabaseServerClient()
@@ -25,13 +27,14 @@ export default async function HomePage() {
       {/* Navbar */}
       <nav className="w-full flex items-center justify-between p-6 z-10 max-w-7xl mx-auto">
         <div className="flex items-center gap-2 font-bold text-xl tracking-tight">
-          <MessageSquare className="w-6 h-6 text-blue-500" />
+          {/* <MessageSquare className="w-6 h-6 text-blue-500" /> */}
+          <Image src={`${STORAGE_URL}/logo/vambu-logo.png`} alt="Vambu Logo" width={40} height={40} className="object-contain drop-shadow-md rounded-full" />
           <span>Vambu</span>
         </div>
         <div className="flex items-center gap-4">
-          <Link href="/auth/login" className="text-sm font-medium hover:text-blue-500 transition-colors">
+          {/* <Link href="/auth/login" className="text-sm font-medium hover:text-blue-500 transition-colors">
             Sign In
-          </Link>
+          </Link> */}
           <Link 
             href="/auth/register" 
             className="text-sm font-medium bg-foreground text-background px-4 py-2 rounded-full hover:opacity-90 transition-opacity"
@@ -67,12 +70,12 @@ export default async function HomePage() {
           >
             Start Chatting <Zap className="w-4 h-4" />
           </Link>
-          <Link 
+          {/* <Link 
             href="/auth/login" 
             className="flex-1 bg-card text-card-foreground border border-border font-medium py-3 px-8 rounded-full hover:bg-muted transition-all flex items-center justify-center gap-2"
           >
             Sign In
-          </Link>
+          </Link> */}
         </div>
 
         {/* Feature Highlights */}
