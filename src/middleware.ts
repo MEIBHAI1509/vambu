@@ -34,7 +34,21 @@ export async function middleware(request: NextRequest) {
 
   const url = request.nextUrl.clone()
 
-  if (!user && url.pathname.startsWith('/chat')) {
+  const protectedPrefixes = [
+    '/chat',
+    '/profile',
+    '/admin',
+    '/groups',
+    '/favourites',
+    '/calendar',
+    '/ai-chat',
+    '/files',
+    '/settings',
+  ] as const
+
+  const isProtected = protectedPrefixes.some((p) => url.pathname === p || url.pathname.startsWith(`${p}/`))
+
+  if (!user && isProtected) {
     url.pathname = '/auth/login'
     return NextResponse.redirect(url)
   }
@@ -43,5 +57,15 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/chat/:path*'],
+  matcher: [
+    '/chat/:path*',
+    '/profile/:path*',
+    '/admin/:path*',
+    '/groups/:path*',
+    '/favourites/:path*',
+    '/calendar/:path*',
+    '/ai-chat/:path*',
+    '/files/:path*',
+    '/settings/:path*',
+  ],
 }

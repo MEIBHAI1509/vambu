@@ -1,14 +1,16 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase-client'
 import { motion } from 'framer-motion'
-import { Eye, EyeOff, Loader2, UserPlus } from 'lucide-react'
+import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { STORAGE_URL } from '@/utils/common'
 
 export default function RegisterPage() {
+  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -22,7 +24,7 @@ export default function RegisterPage() {
     setError(null)
     setMessage(null)
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -36,7 +38,27 @@ export default function RegisterPage() {
       return
     }
 
-    setMessage("Check your email and confirm your account.")
+    if (data.session) {
+      router.push('/chat')
+      router.refresh()
+      setLoading(false)
+      return
+    }
+
+    if (!data.user) {
+      setError('Could not create an account. Please try again or sign in if you already have one.')
+      setLoading(false)
+      return
+    }
+
+    const identities = data.user.identities ?? []
+    if (identities.length === 0) {
+      setError('existing_account')
+      setLoading(false)
+      return
+    }
+
+    setMessage('Check your email and confirm your account.')
     setLoading(false)
   }
 
@@ -118,13 +140,29 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          {error && (
+          {error && error !== 'existing_account' && (
             <motion.div 
               initial={{ opacity: 0, height: 0 }} 
               animate={{ opacity: 1, height: 'auto' }} 
               className="text-sm text-red-400 font-medium bg-red-400/10 p-3 rounded-lg border border-red-400/20"
             >
               {error}
+            </motion.div>
+          )}
+
+          {error === 'existing_account' && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              className="text-sm text-amber-200 font-medium bg-amber-500/10 p-3 rounded-lg border border-amber-500/25 space-y-2"
+            >
+              <p>An account with this email already exists. Sign in with your password on the login page.</p>
+              <Link
+                href="/auth/login"
+                className="inline-block text-indigo-400 hover:text-indigo-300 underline font-semibold"
+              >
+                Go to Sign in
+              </Link>
             </motion.div>
           )}
 
