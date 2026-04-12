@@ -1,8 +1,11 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, type NextRequest } from 'next/server'
 import { z } from 'zod'
-import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { createSupabaseRouteHandlerClient } from '@/lib/supabase-server'
 import { findDirectConversationId } from '@/lib/chat-server'
+import { insertGroupConversation } from '@/lib/create-group-conversation'
 import type { CreateConversationResponse } from '@/lib/chat-types'
+
+export const dynamic = 'force-dynamic'
 
 const directSchema = z
   .object({
@@ -15,67 +18,71 @@ const groupSchema = z
   .object({
     type: z.literal('group'),
     name: z.string().trim().min(1).max(120),
-    memberIds: z.array(z.string().uuid()).min(1).max(200),
+    memberIds: z.array(z.string().uuid()).min(2).max(200),
   })
   .strict()
 
 const bodySchema = z.discriminatedUnion('type', [directSchema, groupSchema])
 
-export async function POST(req: Request): Promise<NextResponse<CreateConversationResponse>> {
+export async function POST(request: NextRequest): Promise<NextResponse<CreateConversationResponse>> {
+  const { supabase, applySupabaseCookies } = createSupabaseRouteHandlerClient(request)
+
+  const respond = (body: CreateConversationResponse, status = 200) => {
+    const res = NextResponse.json(body, { status })
+    applySupabaseCookies(res)
+    return res
+  }
+
   let json: unknown
   try {
-    json = await req.json()
+    json = await request.json()
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    return respond({ error: 'Invalid JSON body' }, 400)
   }
 
   const parsed = bodySchema.safeParse(json)
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 })
+    return respond({ error: parsed.error.flatten() }, 422)
   }
 
-  const supabase = await createSupabaseServerClient()
   const {
     data: { user },
     error: authError,
   } = await supabase.auth.getUser()
 
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[api/conversation/create] getUser', {
+      userId: user?.id ?? null,
+      authError: authError?.message ?? null,
+    })
+  }
+
   if (authError || !user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return respond({ error: 'Unauthorized' }, 401)
   }
 
   if (parsed.data.type === 'direct') {
     const { otherUserId } = parsed.data
 
     if (otherUserId === user.id) {
-      return NextResponse.json({ error: 'Cannot start a chat with yourself' }, { status: 400 })
-    }
-
-    const { data: otherUser, error: otherErr } = await supabase
-      .from('users')
-      .select('id')
-      .eq('id', otherUserId)
-      .maybeSingle()
-
-    if (otherErr || !otherUser) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      return respond({ error: 'Cannot start a chat with yourself' }, 400)
     }
 
     const existingId = await findDirectConversationId(supabase, user.id, otherUserId)
     if (existingId) {
-      return NextResponse.json({ data: { conversationId: existingId } })
+      return respond({ data: { conversationId: existingId } })
     }
 
     const { data: created, error: insertConvErr } = await supabase
       .from('conversations')
-      .insert({ type: 'direct', name: null })
+      .insert({ type: 'direct', name: null, created_by: user.id })
       .select('id')
       .single()
 
     if (insertConvErr || !created) {
-      return NextResponse.json(
+      return respond(
         { error: insertConvErr?.message ?? 'Failed to create conversation' },
-        { status: 400 }
+        400
       )
     }
 
@@ -88,44 +95,18 @@ export async function POST(req: Request): Promise<NextResponse<CreateConversatio
 
     if (partErr) {
       await supabase.from('conversations').delete().eq('id', conversationId)
-      return NextResponse.json({ error: partErr.message }, { status: 400 })
+      return respond({ error: partErr.message }, 400)
     }
 
-    return NextResponse.json({ data: { conversationId } })
+    return respond({ data: { conversationId } })
   }
 
   const { name, memberIds } = parsed.data
-  const memberSet = new Set([user.id, ...memberIds])
-  const allIds = [...memberSet]
+  const result = await insertGroupConversation(supabase, user.id, name, memberIds)
 
-  const { data: existingUsers, error: usersErr } = await supabase.from('users').select('id').in('id', allIds)
-
-  if (usersErr || !existingUsers || existingUsers.length !== allIds.length) {
-    return NextResponse.json({ error: 'One or more users were not found' }, { status: 404 })
+  if (!result.ok) {
+    return respond({ error: result.message }, result.status)
   }
 
-  const { data: created, error: insertConvErr } = await supabase
-    .from('conversations')
-    .insert({ type: 'group', name })
-    .select('id')
-    .single()
-
-  if (insertConvErr || !created) {
-    return NextResponse.json(
-      { error: insertConvErr?.message ?? 'Failed to create group' },
-      { status: 400 }
-    )
-  }
-
-  const conversationId = (created as { id: string }).id
-
-  const rows = allIds.map((uid) => ({ conversation_id: conversationId, user_id: uid }))
-  const { error: partErr } = await supabase.from('conversation_participants').insert(rows)
-
-  if (partErr) {
-    await supabase.from('conversations').delete().eq('id', conversationId)
-    return NextResponse.json({ error: partErr.message }, { status: 400 })
-  }
-
-  return NextResponse.json({ data: { conversationId } })
+  return respond({ data: { conversationId: result.conversation.id } })
 }

@@ -37,6 +37,11 @@ export type CreateConversationResponse =
   | { error: string }
   | { error: { formErrors: string[]; fieldErrors: Record<string, string[]> } }
 
+export type CreateGroupChatResponse =
+  | { data: { conversation: ConversationRow } }
+  | { error: string }
+  | { error: { formErrors: string[]; fieldErrors: Record<string, string[]> } }
+
 export type SendMessageResponse =
   | { data: MessageRow }
   | { error: string }
@@ -79,5 +84,29 @@ export type UsersDirectoryResponse =
 
 export type UsersResolveResponse =
   | { data: { id: string; displayName: string; avatar_url: string | null }[] }
+  | { error: string }
+  | { error: { formErrors: string[]; fieldErrors: Record<string, string[]> } }
+
+export type ChatPeerProfile = {
+  userId: string
+  username: string | null
+  email: string | null
+  phone: string | null
+  bio: string | null
+  avatar_url: string | null
+  last_seen_at: string | null
+}
+
+export type ChatGroupMemberProfile = {
+  userId: string
+  username: string | null
+  displayName: string
+  avatar_url: string | null
+  last_seen_at: string | null
+}
+
+export type ChatConversationProfileResponse =
+  | { data: { kind: 'direct'; peer: ChatPeerProfile } }
+  | { data: { kind: 'group'; members: ChatGroupMemberProfile[] } }
   | { error: string }
   | { error: { formErrors: string[]; fieldErrors: Record<string, string[]> } }

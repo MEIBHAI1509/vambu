@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Loader2, MessageSquare } from 'lucide-react'
+import { Loader2, MessageSquare, Users } from 'lucide-react'
 import { supabase } from '@/lib/supabase-client'
 
 export default function ChatPage() {
@@ -46,6 +47,20 @@ export default function ChatPage() {
           <MessageSquare className="w-7 h-7" />
         </div>
         <h1 className="text-xl font-bold text-foreground">Messages</h1>
+        <p className="text-sm text-muted-foreground">
+          Start a chat from the list or open{' '}
+          <Link href="/groups" className="font-medium text-[#141235] dark:text-indigo-400 underline underline-offset-2">
+            Groups
+          </Link>{' '}
+          for group conversations.
+        </p>
+        <Link
+          href="/groups"
+          className="lg:hidden w-full max-w-xs mx-auto text-sm font-medium rounded-xl border border-border px-4 py-2.5 hover:bg-[var(--accent-soft)] transition-colors flex items-center justify-center gap-2"
+        >
+          <Users className="w-4 h-4 shrink-0" />
+          Go to groups
+        </Link>
       </motion.div>
     </div>
   )

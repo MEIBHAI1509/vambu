@@ -24,11 +24,11 @@ const NAV = [
   { id: 'dashboard', href: '/admin/dashboard', icon: Home, label: 'Dashboard' },
   { id: 'messages', href: '/chat', icon: MessageSquare, label: 'Messages' },
   { id: 'groups', href: '/groups', icon: Users, label: 'Groups' },
-  { id: 'favourites', href: '/favourites', icon: Star, label: 'Favourites' },
-  { id: 'calendar', href: '/calendar', icon: Calendar, label: 'Calendar' },
-  { id: 'ai-chat', href: '/ai-chat', icon: MessageSquare, label: 'AI Chat' },
-  { id: 'files', href: '/files', icon: FileText, label: 'Files' },
-  { id: 'settings', href: '/settings', icon: Settings, label: 'Settings' },
+  // { id: 'favourites', href: '/favourites', icon: Star, label: 'Favourites' },
+  // { id: 'calendar', href: '/calendar', icon: Calendar, label: 'Calendar' },
+  // { id: 'ai-chat', href: '/ai-chat', icon: MessageSquare, label: 'AI Chat' },
+  // { id: 'files', href: '/files', icon: FileText, label: 'Files' },
+  // { id: 'settings', href: '/settings', icon: Settings, label: 'Settings' },
 ] as const
 
 function isNavActive(pathname: string, href: string) {
@@ -43,16 +43,19 @@ function isNavActive(pathname: string, href: string) {
 
 export function AppSidebar({
   user,
+  isAdmin,
 }: {
   user: {
     email: string | null
     username: string | null
     avatarUrl: string | null
   }
+  isAdmin: boolean
 }) {
   const pathname = usePathname()
   const router = useRouter()
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false)
+  const navItems = isAdmin ? NAV : NAV.filter((item) => item.id !== 'dashboard')
 
   useEffect(() => {
     if (!logoutConfirmOpen) return
@@ -155,7 +158,7 @@ export function AppSidebar({
       </div>
 
       <nav className="flex-1 px-3 md:px-4 py-2 flex flex-col gap-1 overflow-y-auto custom-scrollbar">
-        {NAV.map((item, idx) => {
+        {navItems.map((item, idx) => {
           const active = isNavActive(pathname, item.href)
           return (
             <motion.div

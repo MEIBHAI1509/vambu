@@ -58,11 +58,6 @@ export async function POST(req: Request): Promise<NextResponse<AddParticipantsRe
   }
 
   const uniqueNew = [...new Set(userIds)]
-  const { data: existingUsers, error: euErr } = await supabase.from('users').select('id').in('id', uniqueNew)
-
-  if (euErr || !existingUsers || existingUsers.length !== uniqueNew.length) {
-    return NextResponse.json({ error: 'One or more users were not found' }, { status: 404 })
-  }
 
   const { data: existingParts, error: epErr } = await supabase
     .from('conversation_participants')

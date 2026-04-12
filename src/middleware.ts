@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { isAppAdmin } from '@/lib/is-app-admin'
 
 export async function middleware(request: NextRequest) {
 
@@ -53,6 +54,15 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  const isAdminRoute = url.pathname === '/admin' || url.pathname.startsWith('/admin/')
+  if (user && isAdminRoute) {
+    const allowed = await isAppAdmin(supabase, user.id)
+    if (!allowed) {
+      url.pathname = '/chat'
+      return NextResponse.redirect(url)
+    }
+  }
+
   return response
 }
 
@@ -67,5 +77,7 @@ export const config = {
     '/ai-chat/:path*',
     '/files/:path*',
     '/settings/:path*',
+    // Refresh auth cookies before conversation APIs so RLS sees `authenticated`
+    '/api/conversation/:path*',
   ],
 }

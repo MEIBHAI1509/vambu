@@ -8,7 +8,14 @@ import { displayNameFromRow } from '@/lib/display-user'
 import { fetchUserProfilesForDisplay } from '@/lib/resolve-user-display'
 import type { ChatDirectoryUser, ConversationListItem, ConversationListResponse } from '@/lib/chat-types'
 
-export async function GET(): Promise<NextResponse<ConversationListResponse>> {
+type ConvRow = { id: string; type: string; name: string | null; created_at: string }
+
+export async function GET(req: Request): Promise<NextResponse<ConversationListResponse>> {
+  const requestUrl = new URL(req.url)
+  const typeParam = requestUrl.searchParams.get('type')
+  const typeFilter: 'direct' | 'group' | null =
+    typeParam === 'direct' || typeParam === 'group' ? typeParam : null
+
   const supabase = await createSupabaseServerClient()
   const {
     data: { user },
@@ -43,10 +50,20 @@ export async function GET(): Promise<NextResponse<ConversationListResponse>> {
     return NextResponse.json({ error: cErr?.message ?? 'Failed to load conversations' }, { status: 400 })
   }
 
+  let filteredConvs = convs as ConvRow[]
+  if (typeFilter) {
+    filteredConvs = filteredConvs.filter((c) => c.type === typeFilter)
+  }
+
+  const activeConvIds = filteredConvs.map((c) => c.id)
+  if (activeConvIds.length === 0) {
+    return NextResponse.json({ data: [] })
+  }
+
   const { data: allParticipants, error: apErr } = await supabase
     .from('conversation_participants')
     .select('conversation_id, user_id')
-    .in('conversation_id', convIds)
+    .in('conversation_id', activeConvIds)
 
   if (apErr || !allParticipants) {
     return NextResponse.json({ error: apErr.message }, { status: 400 })
@@ -61,21 +78,20 @@ export async function GET(): Promise<NextResponse<ConversationListResponse>> {
   }
 
   const directOtherIds = new Set<string>()
-  for (const c of convs) {
-    if ((c as { type: string }).type !== 'direct') continue
-    const ids = participantsByConv.get((c as { id: string }).id) ?? []
+  for (const c of filteredConvs) {
+    if (c.type !== 'direct') continue
+    const ids = participantsByConv.get(c.id) ?? []
     const other = ids.find((id) => id !== user.id)
     if (other) directOtherIds.add(other)
   }
 
-  const lastByConv = await fetchLastMessageByConversation(supabase, convIds)
+  const lastByConv = await fetchLastMessageByConversation(supabase, activeConvIds)
   const senderIds = [...new Set([...lastByConv.values()].map((m) => m.sender_id))]
 
   const allProfileIds = [...new Set([...directOtherIds, ...senderIds])]
 
-  let profiles = await fetchUserProfilesForDisplay(allProfileIds)
+  const profiles = await fetchUserProfilesForDisplay(allProfileIds)
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!serviceKey && allProfileIds.length > 0) {
     const { data: rows, error: uErr } = await supabase.from('users').select('*').in('id', allProfileIds)
@@ -106,9 +122,7 @@ export async function GET(): Promise<NextResponse<ConversationListResponse>> {
     }
   }
 
-  type ConvRow = { id: string; type: string; name: string | null; created_at: string }
-
-  const baseItems: ConversationListItem[] = (convs as ConvRow[]).map((c) => {
+  const baseItems: ConversationListItem[] = filteredConvs.map((c) => {
     const { id, name, created_at } = c
     const type = c.type as 'direct' | 'group'
 

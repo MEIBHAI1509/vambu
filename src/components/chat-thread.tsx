@@ -14,6 +14,7 @@ import type {
   UsersResolveResponse,
 } from '@/lib/chat-types'
 import { formatMessageTime, getPeerPresence, isMessageReadByPeer } from '@/lib/message-time'
+import { ChatConversationProfilePopover } from '@/components/chat-conversation-profile-popover'
 
 function MessageDeliveryTicks({ read }: { read: boolean }) {
   const color = read
@@ -33,10 +34,14 @@ function MessageDeliveryTicks({ read }: { read: boolean }) {
 export function ChatThread({
   conversationId,
   currentUserId,
+  workspace = 'messages',
 }: {
   conversationId: string
   currentUserId: string
+  /** Which section this thread is opened from (mobile back link). */
+  workspace?: 'messages' | 'groups'
 }) {
+  const listPath = workspace === 'groups' ? '/groups' : '/chat'
   const bottomRef = useRef<HTMLDivElement>(null)
   const { conversations, refreshConversations } = useChatWorkspace()
   const meta = useMemo(
@@ -199,33 +204,44 @@ export function ChatThread({
   return (
     <div className="flex-1 flex flex-col min-w-0 min-h-0 bg-[var(--chat-surface)]">
       <header className="min-h-14 shrink-0 px-4 py-2 flex items-center gap-3 border-b border-border bg-card">
-        <Link href="/chat" className="text-sm text-muted-foreground hover:text-foreground lg:hidden pr-1">
+        <Link href={listPath} className="text-sm text-muted-foreground hover:text-foreground lg:hidden pr-1">
           ←
         </Link>
-        <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-xs font-bold overflow-hidden shrink-0">
-          {peerAvatar ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={peerAvatar} alt="" className="w-full h-full object-cover" />
-          ) : (
-            headerInitials
-          )}
-        </div>
-        <div className="min-w-0 flex-1 flex flex-col justify-center">
-          <h1 className="font-semibold text-foreground truncate min-w-0 leading-tight">{title}</h1>
-          {directPeerPresence ? (
-            <div className="flex items-center gap-1.5 min-w-0 mt-0.5">
-              {directPeerPresence.online ? (
-                <span
-                  className="h-2 w-2 rounded-full bg-emerald-500 shrink-0 animate-pulse"
-                  aria-hidden
-                />
-              ) : null}
-              <p className="text-[11px] text-muted-foreground truncate leading-snug">
-                {directPeerPresence.label}
-              </p>
-            </div>
-          ) : null}
-        </div>
+        <ChatConversationProfilePopover
+          conversationId={conversationId}
+          currentUserId={currentUserId}
+          isGroup={!!isGroup}
+          trigger={
+            <>
+              <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-xs font-bold overflow-hidden shrink-0">
+                {peerAvatar ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={peerAvatar} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  headerInitials
+                )}
+              </div>
+              <div className="min-w-0 flex-1 flex flex-col justify-center">
+                <span className="font-semibold text-foreground truncate min-w-0 leading-tight block">
+                  {title}
+                </span>
+                {directPeerPresence ? (
+                  <div className="flex items-center gap-1.5 min-w-0 mt-0.5">
+                    {directPeerPresence.online ? (
+                      <span
+                        className="h-2 w-2 rounded-full bg-emerald-500 shrink-0 animate-pulse"
+                        aria-hidden
+                      />
+                    ) : null}
+                    <span className="text-[11px] text-muted-foreground truncate leading-snug">
+                      {directPeerPresence.label}
+                    </span>
+                  </div>
+                ) : null}
+              </div>
+            </>
+          }
+        />
       </header>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar min-h-0">

@@ -22,7 +22,7 @@ async function loadParticipantRows(
     .select('user_id, last_read_at')
     .eq('conversation_id', conversationId)
 
-  if (!full.error && full.data?.length) {
+  if (!full.error && full.data && full.data.length > 0) {
     return { rows: full.data as PartRow[], errorMessage: null }
   }
 
@@ -31,7 +31,7 @@ async function loadParticipantRows(
     .select('user_id')
     .eq('conversation_id', conversationId)
 
-  if (!slim.error && slim.data?.length) {
+  if (!slim.error && slim.data && slim.data.length > 0) {
     return {
       rows: (slim.data as { user_id: string }[]).map((r) => ({
         user_id: r.user_id,
@@ -41,7 +41,11 @@ async function loadParticipantRows(
     }
   }
 
-  const msg = full.error?.message ?? slim.error?.message ?? 'No participant rows'
+  if (!slim.error && (!slim.data || slim.data.length === 0)) {
+    return { rows: [], errorMessage: 'No participant rows' }
+  }
+
+  const msg = slim.error?.message ?? full.error?.message ?? 'No participant rows'
   return { rows: [], errorMessage: msg }
 }
 

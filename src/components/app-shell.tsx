@@ -10,6 +10,7 @@ type SidebarProfile = {
   email: string | null
   username: string | null
   avatarUrl: string | null
+  isAdmin: boolean
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -19,6 +20,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     email: null,
     username: null,
     avatarUrl: null,
+    isAdmin: false,
   })
 
   useEffect(() => {
@@ -35,7 +37,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       const { data: row } = await supabase
         .from('users')
-        .select('username, avatar_url')
+        .select('username, avatar_url, is_admin')
         .eq('id', session.user.id)
         .maybeSingle()
 
@@ -43,6 +45,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         email,
         username: (row?.username as string | null) ?? null,
         avatarUrl: (row?.avatar_url as string | null) ?? null,
+        isAdmin: (row as { is_admin?: boolean } | null)?.is_admin === true,
       })
       setLoading(false)
     }
@@ -77,7 +80,14 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex h-[100dvh] bg-[var(--app-canvas)] text-foreground overflow-hidden font-sans p-2 md:p-4 gap-3 md:gap-4">
-      <AppSidebar user={sidebarUser} />
+      <AppSidebar
+        user={{
+          email: sidebarUser.email,
+          username: sidebarUser.username,
+          avatarUrl: sidebarUser.avatarUrl,
+        }}
+        isAdmin={sidebarUser.isAdmin}
+      />
       <div className="flex-1 min-h-0 min-w-0 flex flex-col">{children}</div>
     </div>
   )

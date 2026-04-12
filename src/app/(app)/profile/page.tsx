@@ -1,11 +1,24 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ComponentType } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Camera, Loader2, Save } from 'lucide-react'
+import {
+  AlertCircle,
+  ArrowLeft,
+  Cake,
+  Camera,
+  CheckCircle2,
+  FileText,
+  Loader2,
+  Mail,
+  Save,
+  Smartphone,
+  User,
+} from 'lucide-react'
 import { supabase } from '@/lib/supabase-client'
+import { cn } from '@/lib/cn'
 
 type UserProfileRow = {
   id: string
@@ -49,8 +62,26 @@ const uploadAvatar = async (
   return { url: data.publicUrl }
 }
 
-const fieldClass =
-  'w-full h-12 rounded-2xl bg-[var(--input-bg)] border border-border px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-indigo-500/40 dark:focus:ring-indigo-400/30'
+const inputClass = cn(
+  'w-full min-h-12 rounded-2xl bg-[var(--input-bg)] border border-border px-4 text-sm text-foreground',
+  'placeholder:text-muted-foreground/80',
+  'focus:outline-none focus:ring-2 focus:ring-[#141235]/20 focus:border-[#141235]/25',
+  'dark:focus:ring-indigo-500/25 dark:focus:border-indigo-500/30',
+  'transition-shadow duration-200'
+)
+
+const labelClass = 'flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground'
+
+function SectionTitle({ icon: Icon, children }: { icon: ComponentType<{ className?: string }>; children: string }) {
+  return (
+    <div className="flex items-center gap-2 border-b border-border pb-3 mb-5">
+      <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[#141235] dark:text-indigo-300">
+        <Icon className="h-4 w-4" aria-hidden />
+      </span>
+      <h2 className="text-sm font-semibold text-foreground">{children}</h2>
+    </div>
+  )
+}
 
 export default function ProfilePage() {
   const router = useRouter()
@@ -82,6 +113,12 @@ export default function ProfilePage() {
   const initials = useMemo(() => {
     const base = (username || email || 'U').trim()
     return base.charAt(0).toUpperCase()
+  }, [username, email])
+
+  const displayName = useMemo(() => {
+    const u = username.trim()
+    if (u) return u
+    return email?.split('@')[0] ?? 'Your name'
   }, [username, email])
 
   useEffect(() => {
@@ -182,175 +219,249 @@ export default function ProfilePage() {
     setAvatarUrl(nextAvatarUrl)
     setAvatarFile(null)
     setSaving(false)
-    setSuccess('Profile saved.')
+    setSuccess('Profile saved successfully.')
   }
 
   const displayAvatarSrc = previewObjectUrl ?? avatarUrl
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center rounded-3xl bg-card border border-border min-h-[200px]">
+      <div className="flex-1 flex flex-col items-center justify-center gap-3 rounded-3xl bg-card border border-border min-h-[280px]">
         <Loader2 className="w-10 h-10 animate-spin text-[#141235] dark:text-indigo-300" />
+        <p className="text-sm text-muted-foreground">Loading your profile…</p>
       </div>
     )
   }
 
   return (
     <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar rounded-3xl border border-border bg-card shadow-sm">
-      <div className="relative overflow-hidden">
-        <div className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-indigo-500/15 dark:bg-indigo-500/20 blur-3xl" />
-        <div className="pointer-events-none absolute bottom-0 left-1/4 h-48 w-48 rounded-full bg-fuchsia-500/10 blur-3xl" />
+      <div className="relative min-h-full">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-48 bg-gradient-to-b from-indigo-500/[0.12] via-violet-500/[0.06] to-transparent dark:from-indigo-500/15 dark:via-violet-500/10" />
+        <div className="pointer-events-none absolute top-20 right-[10%] h-32 w-32 rounded-full bg-fuchsia-400/10 blur-3xl dark:bg-fuchsia-500/15" />
+        <div className="pointer-events-none absolute bottom-40 left-[5%] h-40 w-40 rounded-full bg-indigo-400/10 blur-3xl dark:bg-indigo-500/10" />
 
-        <div className="relative mx-auto max-w-4xl px-4 py-8 md:py-10">
-          <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="relative mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-8 lg:py-10">
+          <motion.header
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+          >
             <button
               type="button"
               onClick={() => router.push('/chat')}
-              className="inline-flex items-center gap-2 rounded-2xl border border-border bg-[var(--accent-soft)] px-4 py-2.5 text-sm font-medium text-foreground hover:opacity-90 transition-opacity"
+              className="inline-flex w-fit items-center gap-2 rounded-2xl border border-border bg-card/90 px-4 py-2.5 text-sm font-medium text-foreground shadow-sm backdrop-blur-sm hover:bg-[var(--accent-soft)] transition-colors"
             >
-              <ArrowLeft className="w-4 h-4" />
-              Back to chat
+              <ArrowLeft className="h-4 w-4 shrink-0 opacity-70" />
+              Back to messages
             </button>
-
             <button
               type="button"
               onClick={() => void updateProfile()}
               disabled={saving}
-              className="inline-flex items-center gap-2 rounded-2xl bg-[#141235] dark:bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg hover:opacity-90 disabled:opacity-60 transition-opacity"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#141235] dark:bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-[#141235]/20 dark:shadow-indigo-950/40 hover:opacity-92 disabled:opacity-55 transition-opacity sm:min-w-[140px]"
             >
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              {saving ? 'Saving…' : 'Save'}
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              {saving ? 'Saving…' : 'Save changes'}
             </button>
-          </div>
+          </motion.header>
 
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35 }}
-            className="mt-8 grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-6"
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            className="mt-8 space-y-6"
           >
-            <div className="rounded-3xl border border-border bg-[var(--chat-surface)] p-6 shadow-sm">
-              <div className="min-w-0">
-                <h1 className="text-2xl font-bold tracking-tight text-foreground">Your profile</h1>
-                <p className="mt-1 text-sm text-muted-foreground truncate">{email}</p>
+            <div className="overflow-hidden rounded-3xl border border-border bg-[var(--chat-surface)] shadow-sm">
+              <div className="border-b border-border bg-gradient-to-r from-[var(--accent-soft)]/80 to-transparent px-6 py-6 sm:px-8 sm:py-8">
+                <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
+                  <div className="relative shrink-0">
+                    <div
+                      className={cn(
+                        'relative h-28 w-28 overflow-hidden rounded-3xl border-2 border-border bg-[var(--input-bg)] shadow-inner',
+                        'ring-4 ring-background dark:ring-card'
+                      )}
+                    >
+                      {displayAvatarSrc ? (
+                        <Image
+                          src={displayAvatarSrc}
+                          alt=""
+                          fill
+                          sizes="112px"
+                          className="object-cover"
+                          unoptimized={displayAvatarSrc.startsWith('blob:')}
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-indigo-500/15 to-violet-500/20 text-3xl font-bold text-[#141235]/70 dark:text-indigo-200/90">
+                          {initials}
+                        </div>
+                      )}
+                    </div>
+                    <label
+                      className={cn(
+                        'absolute -bottom-1 -right-1 flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl',
+                        'border-2 border-background bg-[#141235] text-white shadow-md dark:border-card dark:bg-indigo-600',
+                        'hover:opacity-90 transition-opacity'
+                      )}
+                      title="Change photo"
+                    >
+                      <Camera className="h-4 w-4" />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="sr-only"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0]
+                          setAvatarFile(f ?? null)
+                          e.target.value = ''
+                        }}
+                      />
+                    </label>
+                  </div>
+
+                  <div className="min-w-0 flex-1 text-center sm:text-left">
+                    <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Profile</p>
+                    <h1 className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">{displayName}</h1>
+                    {username.trim() ? (
+                      <p className="mt-1 font-mono text-sm text-muted-foreground">@{username.trim()}</p>
+                    ) : null}
+                    {email ? (
+                      <p className="mt-3 inline-flex items-center gap-2 rounded-full border border-border bg-card/80 px-3 py-1.5 text-xs text-muted-foreground">
+                        <Mail className="h-3.5 w-3.5 shrink-0 opacity-70" />
+                        <span className="truncate max-w-[min(100%,280px)]">{email}</span>
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
               </div>
 
-              <div className="mt-6 flex items-center gap-4">
-                <div className="relative h-20 w-20 rounded-2xl overflow-hidden border border-border bg-[var(--input-bg)] shadow-inner shrink-0">
-                  {displayAvatarSrc ? (
-                    <Image
-                      src={displayAvatarSrc}
-                      alt="Avatar"
-                      fill
-                      sizes="80px"
-                      className="object-cover"
-                      unoptimized={displayAvatarSrc.startsWith('blob:')}
+              <div className="p-6 sm:p-8 space-y-8">
+                <section>
+                  <SectionTitle icon={User}>Account</SectionTitle>
+                  <div className="space-y-5">
+                    <div className="space-y-2">
+                      <label htmlFor="profile-username" className={labelClass}>
+                        <User className="h-3.5 w-3.5 opacity-70" />
+                        Username
+                      </label>
+                      <input
+                        id="profile-username"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        placeholder="your_name"
+                        autoComplete="username"
+                        className={inputClass}
+                      />
+                      <p className="text-xs text-muted-foreground">3–20 characters: letters, numbers, underscore, or dot.</p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <span className={labelClass}>
+                        <Mail className="h-3.5 w-3.5 opacity-70" />
+                        Email
+                      </span>
+                      <div className="flex min-h-12 items-center rounded-2xl border border-dashed border-border bg-[var(--input-bg)]/60 px-4 text-sm text-muted-foreground">
+                        {email ?? '—'}
+                      </div>
+                      <p className="text-xs text-muted-foreground">Email is managed by your sign-in provider.</p>
+                    </div>
+                  </div>
+                </section>
+
+                <section>
+                  <SectionTitle icon={Smartphone}>Contact</SectionTitle>
+                  <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <label htmlFor="profile-phone" className={labelClass}>
+                        <Smartphone className="h-3.5 w-3.5 opacity-70" />
+                        Phone
+                      </label>
+                      <input
+                        id="profile-phone"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="+1 555 000 0000"
+                        inputMode="tel"
+                        autoComplete="tel"
+                        className={inputClass}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label htmlFor="profile-dob" className={labelClass}>
+                        <Cake className="h-3.5 w-3.5 opacity-70" />
+                        Date of birth
+                      </label>
+                      <input id="profile-dob" value={dob} onChange={(e) => setDob(e.target.value)} type="date" className={inputClass} />
+                    </div>
+                  </div>
+                </section>
+
+                <section>
+                  <SectionTitle icon={FileText}>About you</SectionTitle>
+                  <div className="space-y-2">
+                    <label htmlFor="profile-bio" className={labelClass}>
+                      <FileText className="h-3.5 w-3.5 opacity-70" />
+                      Bio
+                    </label>
+                    <textarea
+                      id="profile-bio"
+                      value={bio}
+                      onChange={(e) => setBio(e.target.value)}
+                      placeholder="A short line about what you do or what you’re into…"
+                      rows={5}
+                      className={cn(inputClass, 'min-h-[140px] resize-y py-3 leading-relaxed')}
                     />
-                  ) : (
-                    <div className="h-full w-full flex items-center justify-center text-2xl font-bold text-muted-foreground">
-                      {initials}
-                    </div>
-                  )}
+                  </div>
+                </section>
+
+                {(error || success) && (
+                  <div className="space-y-3 pt-2">
+                    {error ? (
+                      <motion.div
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        role="alert"
+                        className="flex gap-3 rounded-2xl border border-red-500/20 bg-red-500/[0.08] p-4 text-sm text-red-800 dark:text-red-200/95"
+                      >
+                        <AlertCircle className="h-5 w-5 shrink-0 text-red-600 dark:text-red-400" />
+                        <span className="leading-snug">{error}</span>
+                      </motion.div>
+                    ) : null}
+                    {success ? (
+                      <motion.div
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        role="status"
+                        className="flex gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.08] p-4 text-sm text-emerald-900 dark:text-emerald-100/95"
+                      >
+                        <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                        <span className="leading-snug">{success}</span>
+                      </motion.div>
+                    ) : null}
+                  </div>
+                )}
+
+                <div className="flex flex-col-reverse gap-3 border-t border-border pt-6 sm:flex-row sm:justify-end">
+                  <button
+                    type="button"
+                    onClick={() => router.push('/chat')}
+                    className="rounded-2xl border border-border px-5 py-3 text-sm font-medium text-foreground hover:bg-[var(--accent-soft)] transition-colors sm:hidden"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void updateProfile()}
+                    disabled={saving}
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#141235] dark:bg-indigo-600 px-8 py-3 text-sm font-semibold text-white shadow-md hover:opacity-92 disabled:opacity-55 transition-opacity"
+                  >
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    {saving ? 'Saving…' : 'Save profile'}
+                  </button>
                 </div>
 
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground truncate">
-                    {username.trim() ? `@${username.trim()}` : (email?.split('@')[0] ?? 'User')}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">{email}</p>
-
-                  <label className="mt-3 inline-flex items-center gap-2 rounded-xl border border-border bg-[var(--accent-soft)] px-3 py-2 text-xs font-semibold text-foreground hover:opacity-90 cursor-pointer transition-opacity">
-                    <Camera className="w-4 h-4" />
-                    Choose avatar
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        const f = e.target.files?.[0]
-                        setAvatarFile(f ?? null)
-                        e.target.value = ''
-                      }}
-                    />
-                  </label>
-                  <p className="mt-2 text-[11px] text-muted-foreground">
-                    Saved on Save to bucket <span className="font-semibold">avatars</span> at{' '}
-                    <span className="font-mono">&#123;userId&#125;/&#123;timestamp&#125;.&#123;ext&#125;</span>.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-border bg-[var(--chat-surface)] p-6 shadow-sm">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2 md:col-span-2">
-                  <label className="text-xs font-semibold text-muted-foreground">Username</label>
-                  <input
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder="e.g. vambu.ui"
-                    className={fieldClass}
-                  />
-                  <p className="text-[11px] text-muted-foreground">3–20 chars: letters, numbers, underscore, dot.</p>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-muted-foreground">Mobile number</label>
-                  <input
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="e.g. +91 98765 43210"
-                    className={fieldClass}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-muted-foreground">Date of birth</label>
-                  <input
-                    value={dob}
-                    onChange={(e) => setDob(e.target.value)}
-                    type="date"
-                    className={fieldClass}
-                  />
-                </div>
-
-                <div className="md:col-span-2 space-y-2">
-                  <label className="text-xs font-semibold text-muted-foreground">Bio</label>
-                  <textarea
-                    value={bio}
-                    onChange={(e) => setBio(e.target.value)}
-                    placeholder="Tell people a little about you…"
-                    rows={5}
-                    className="w-full rounded-2xl bg-[var(--input-bg)] border border-border px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-indigo-500/40 dark:focus:ring-indigo-400/30 resize-none"
-                  />
-                </div>
-              </div>
-
-              {(error || success) && (
-                <div className="mt-5">
-                  {error ? (
-                    <div className="rounded-2xl border border-red-500/25 bg-red-500/10 p-4 text-sm text-red-700 dark:text-red-200">
-                      {error}
-                    </div>
-                  ) : null}
-                  {success ? (
-                    <div className="rounded-2xl border border-emerald-500/25 bg-emerald-500/10 p-4 text-sm text-emerald-800 dark:text-emerald-200">
-                      {success}
-                    </div>
-                  ) : null}
-                </div>
-              )}
-
-              <div className="mt-6 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => void updateProfile()}
-                  disabled={saving}
-                  className="inline-flex items-center gap-2 rounded-2xl bg-[#141235] dark:bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-lg hover:opacity-90 disabled:opacity-60 transition-opacity"
-                >
-                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  {saving ? 'Saving…' : 'Save profile'}
-                </button>
+                <p className="text-center text-[10px] text-muted-foreground/80 sm:text-left">
+                  Avatar images are stored in your private folder in the <span className="font-medium">avatars</span> bucket.
+                </p>
               </div>
             </div>
           </motion.div>

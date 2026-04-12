@@ -41,6 +41,9 @@ export async function POST(req: Request) {
 
   const now = new Date().toISOString()
 
+  const isMissingLastReadColumn = (msg: string | undefined) =>
+    !!msg && (msg.includes('last_read_at') || /schema cache/i.test(msg))
+
   const tryUser = await supabase
     .from('conversation_participants')
     .update({ last_read_at: now })
@@ -49,6 +52,10 @@ export async function POST(req: Request) {
 
   if (!tryUser.error) {
     return NextResponse.json({ data: { lastReadAt: now } })
+  }
+
+  if (isMissingLastReadColumn(tryUser.error.message)) {
+    return NextResponse.json({ data: { lastReadAt: null } })
   }
 
   const admin = createSupabaseAdminClient()
@@ -61,6 +68,9 @@ export async function POST(req: Request) {
 
     if (!adminErr) {
       return NextResponse.json({ data: { lastReadAt: now } })
+    }
+    if (isMissingLastReadColumn(adminErr.message)) {
+      return NextResponse.json({ data: { lastReadAt: null } })
     }
     return NextResponse.json({ error: adminErr.message }, { status: 400 })
   }

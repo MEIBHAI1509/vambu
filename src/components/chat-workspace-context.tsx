@@ -9,6 +9,8 @@ import {
   useState,
   type ReactNode,
 } from 'react'
+import { useRouter } from 'next/navigation'
+import { CreateGroupChatModal } from '@/components/create-group-chat-modal'
 import type {
   ChatDirectoryUser,
   ConversationListItem,
@@ -24,21 +26,33 @@ type ChatWorkspaceValue = {
   refreshConversations: () => Promise<void>
   users: ChatDirectoryUser[]
   usersLoading: boolean
+  openCreateGroupModal: () => void
 }
 
 const ChatWorkspaceContext = createContext<ChatWorkspaceValue | null>(null)
 
-export function ChatWorkspaceProvider({ children }: { children: ReactNode }) {
+export function ChatWorkspaceProvider({
+  children,
+  scope,
+}: {
+  children: ReactNode
+  /** `direct` = Messages (1:1 only). `group` = Groups section only. */
+  scope: 'direct' | 'group'
+}) {
+  const router = useRouter()
   const [conversations, setConversations] = useState<ConversationListItem[]>([])
   const [conversationsLoading, setConversationsLoading] = useState(true)
   const [conversationsError, setConversationsError] = useState<string | null>(null)
   const [users, setUsers] = useState<ChatDirectoryUser[]>([])
   const [usersLoading, setUsersLoading] = useState(true)
+  const [groupModalOpen, setGroupModalOpen] = useState(false)
+
+  const listQuery = scope === 'direct' ? '?type=direct' : '?type=group'
 
   const refreshConversations = useCallback(async () => {
     setConversationsLoading(true)
     setConversationsError(null)
-    const res = await fetch('/api/conversation/list', { credentials: 'same-origin' })
+    const res = await fetch(`/api/conversation/list${listQuery}`, { credentials: 'same-origin' })
     const json = (await res.json()) as ConversationListResponse
     if (!res.ok) {
       const msg =
@@ -52,9 +66,11 @@ export function ChatWorkspaceProvider({ children }: { children: ReactNode }) {
       setConversations(json.data)
     }
     setConversationsLoading(false)
-  }, [])
+  }, [listQuery])
 
   useEffect(() => {
+    // Initial load; refreshConversations updates list state from the API.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional mount fetch
     void refreshConversations()
   }, [refreshConversations])
 
@@ -84,6 +100,19 @@ export function ChatWorkspaceProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  const openCreateGroupModal = useCallback(() => {
+    if (scope !== 'group') return
+    setGroupModalOpen(true)
+  }, [scope])
+
+  const onGroupCreated = useCallback(
+    async (conversationId: string) => {
+      await refreshConversations()
+      router.push(`/groups/${conversationId}`)
+    },
+    [refreshConversations, router]
+  )
+
   const value = useMemo(
     () => ({
       conversations,
@@ -92,11 +121,32 @@ export function ChatWorkspaceProvider({ children }: { children: ReactNode }) {
       refreshConversations,
       users,
       usersLoading,
+      openCreateGroupModal,
     }),
-    [conversations, conversationsLoading, conversationsError, refreshConversations, users, usersLoading]
+    [
+      conversations,
+      conversationsLoading,
+      conversationsError,
+      refreshConversations,
+      users,
+      usersLoading,
+      openCreateGroupModal,
+    ]
   )
 
-  return <ChatWorkspaceContext.Provider value={value}>{children}</ChatWorkspaceContext.Provider>
+  return (
+    <ChatWorkspaceContext.Provider value={value}>
+      {children}
+      {scope === 'group' ? (
+        <CreateGroupChatModal
+          open={groupModalOpen}
+          onOpenChange={setGroupModalOpen}
+          users={users}
+          onCreated={onGroupCreated}
+        />
+      ) : null}
+    </ChatWorkspaceContext.Provider>
+  )
 }
 
 export function useChatWorkspace() {
